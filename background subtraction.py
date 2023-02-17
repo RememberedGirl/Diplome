@@ -4,7 +4,7 @@ import cv2
 background_subtractor = cv2.createBackgroundSubtractorMOG2()
 
 # Open the video file
-cap = cv2.VideoCapture('video/input_video.avi')
+cap = cv2.VideoCapture('video/input_video.mp4')
 
 # Process the video frame-by-frame
 while True:
@@ -27,7 +27,7 @@ while True:
     # Show the original frame, foreground mask, and background mask
     cv2.imshow('Original Frame', frame)
     cv2.imshow('Foreground Mask', foreground_mask)
-    cv2.imshow('Background Mask', background_mask)
+    # cv2.imshow('Background Mask', background_mask)
 
     # Press 'q' to quit
     if cv2.waitKey(1) & 0xFF == ord('q'):
