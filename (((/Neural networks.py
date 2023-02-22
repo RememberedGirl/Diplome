@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 
 # Load video
-cap = cv2.VideoCapture('video.mp4')
+cap = cv2.VideoCapture('video/input_video.mp4')
 
 # Load the pre-trained neural network
 model = tf.keras.models.load_model('background_subtraction_model.h5')
