@@ -9,7 +9,7 @@ cap = cv2.VideoCapture('video/input_video.mp4')
 # Process the video frame-by-frame
 while True:
     # Read a frame from the video
-    ret, frame = cap.read()
+    ret,  frame = cap.read()
 
     # Break the loop if the video has ended
     if not ret:

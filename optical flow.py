@@ -1,70 +1,53 @@
 import cv2
 
-# Open the video file
+# Load video
 cap = cv2.VideoCapture('video/input_video.mp4')
 
-# Initialize the parameters for the optical flow method
-lk_params = dict(winSize=(15, 15),
-                 maxLevel=2,
-                 criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+# Define the threshold for detecting static objects
+threshold = 1.0
 
-# Read the first frame of the video
-ret, old_frame = cap.read()
+# Set up the initial frame
+ret, frame = cap.read()
+gray_old = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-# Convert the first frame to grayscale
-old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
-
-# Create a mask to represent the static objects
-mask = None
-
-# Process the video frame-by-frame
+# Loop through the remaining frames
 while True:
-    # Read a frame from the video
     ret, frame = cap.read()
-
-    # Break the loop if the video has ended
     if not ret:
         break
 
-    # Convert the current frame to grayscale
-    frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # Convert the frame to grayscale
+    gray_old = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray_new = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    # Apply the optical flow method to track the motion of the pixels in the video
-    p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, None, None, **lk_params)
+    # Compute the optical flow
+    flow = None
+    flow = cv2.calcOpticalFlowFarneback(prev=gray_old,
+                                          next=gray_new, flow=flow,
+                                          pyr_scale=0.8, levels=15, winsize=5,
+                                          iterations=10, poly_n=5, poly_sigma=0,
+                                          flags=10)
+    #calcOpticalFlowFarneback(gray_old, gray_new, None, 0.5, 3, 15, 3, 5, 1.2, 0)
 
-    # Select only the pixels that are not moving
-    static_pixels = p1[st == 1]
+    # Compute the magnitude of the flow
+    mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
 
-    # Create a new mask to represent the static objects
-    new_mask = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    new_mask.fill(0)
+    # Threshold the magnitude to detect static objects
+    static_mask = mag < threshold
 
-    # Set the pixels corresponding to the static objects to 255 in the new mask
-    for x, y in static_pixels:
-        cv2.circle(new_mask, (x, y), 5, 255, -1)
+    # Set the static pixels to white and the moving pixels to black
+    flow[static_mask] = [255, 255]
 
-    # Apply morphological operations to remove noise and fill holes in the mask
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    new_mask = cv2.morphologyEx(new_mask, cv2.MORPH_CLOSE, kernel)
+    # Display the result
+    cv2.imshow('Static objects', flow)
 
-    # Set the mask as the current mask
-    mask = new_mask
+    # Set the current frame as the old frame for the next iteration
+    gray_old = gray_new
 
-    # Extract the background by subtracting the mask from the current frame
-    background = cv2.bitwise_and(frame, frame, mask=mask)
-
-    # Show the original frame, mask, and background
-    cv2.imshow('Original Frame', frame)
-    cv2.imshow('Mask', mask)
-    cv2.imshow('Background', background)
-
-    # Press 'q' to quit
+    # Exit if the 'q' key is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-    # Set the current frame as the old frame for the next iteration
-    old_gray = frame_gray.copy()
-
-# Release the video capture and close all windows
+# Release video capture and close windows
 cap.release()
 cv2.destroyAllWindows()
